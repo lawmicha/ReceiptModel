@@ -18,6 +18,7 @@ Some doc https://github.com/aws-amplify/amplify-ios/issues/395#issuecomment-6349
 ```
 
 3. `amplify add api`
+```
 ? Please select from one of the below mentioned services: `GraphQL`
 ? Provide API name: `receiptmodel`
 ? Choose the default authorization type for the API `Amazon Cognito User Pool`
@@ -29,7 +30,7 @@ Some doc https://github.com/aws-amplify/amplify-ios/issues/395#issuecomment-6349
 ? Select the default resolution strategy `Auto Merge`
 ? Do you have an annotated GraphQL schema? `Yes`
 ? Provide your schema file path: `schema.graphql`
-
+```
 4. `amplify push`
 ```
 ? Are you sure you want to continue? `Yes`
