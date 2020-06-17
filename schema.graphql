@@ -1,24 +1,30 @@
-type Receipt @model
-    @auth(
-        rules: [ {allow: owner}]
-    )
-{
-    id: ID!
-    state: String
-    isFavorite: Boolean
-    scanError: String
-    created: AWSTimestamp
-    extracted: AWSTimestamp
-    updated: AWSTimestamp
-    viewed: AWSTimestamp
-    emailDocument: String
-    receiptImage: String
-    receiptRawText: String
-    dateTime: AWSDateTime!
-    merchant: String
-    amount: Float!
-    taxTotal: Float
-    subTotalAmount: Float
-    tipAmount: Float
-    total: String!
+type Blog @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  content: String
+  post: [Post] @connection(name: "BlogPosts")
+}
+
+type Post @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  content: String
+  blog: Blog @connection(name: "BlogPosts")
+  comments: [Comment] @connection(name: "PostComments")
+}
+
+type Comment @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  content: String
+  post: Post @connection(name: "PostComments")
+  notes: [Note] @connection(name: "CommentNotes")
+}
+
+type Note @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  content: String
+  comment: Comment @connection(name: "CommentNotes")
+}
+
+type ApprovedBlog @model @auth(rules: [{allow: groups, groups: ["ApprovedBlog"], operations: [read]}]) {
+  id: ID!
+  blogId: String
 }

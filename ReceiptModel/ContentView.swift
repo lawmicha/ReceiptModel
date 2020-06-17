@@ -11,8 +11,10 @@ import Amplify
 import AmplifyPlugins
 import Combine
 class ContentViewModel: ObservableObject {
-    @State var user: AuthUser?
+    @Published var user: AuthUser?
+    @Published var subscriptionData: String = ""
     var listener: UnsubscribeToken?
+    var blogListener: AnyCancellable?
     func listen() {
         _ = Amplify.Auth.fetchAuthSession { event in
             switch event {
@@ -76,35 +78,40 @@ class ContentViewModel: ObservableObject {
             }
         })
     }
+    func blogSubscription() {
+        blogListener = Amplify.DataStore.publisher(for: Blog.self).sink(receiveCompletion: { (completion) in
+            switch completion {
+            case .failure(let error):
+                print("Error \(error)")
+            case .finished:
+                print("Finished")
+            }
+        }) { (mutationEvent) in
+            DispatchQueue.main.async {
+                self.subscriptionData = mutationEvent.json
+            }
+
+        }
+    }
 }
 struct ContentView: View {
     @ObservedObject var vm = ContentViewModel()
-    @State var message: String = ""
-    @State var id: String = "F2C34625-AF12-4EFF-B9EF-34070FB42AC8"
+    @State var message: String = "" 
+
+    @State var id: String = ""
+    @State var approvedId: String = "C1DB05C8-7B98-4BD8-A0A8-AF5C83B4728C"
+
     func save() {
-        let receipt = Receipt(state: "state",
-                              isFavorite: true,
-                              created: 111,
-                              extracted: 111,
-                              updated: 111,
-                              viewed: 11,
-                              emailDocument: "emailDoc",
-                              receiptImage: "image",
-                              receiptRawText: "rawText", dateTime: .now(),
-                              merchant: "merchant",
-                              amount: 123,
-                              taxTotal: 12,
-                              subTotalAmount: 12,
-                              tipAmount: 34,
-                              total: "22")
-        self.id = receipt.id
-        Amplify.DataStore.save(receipt) { (result) in
+        let blog = Blog()
+        self.id = blog.id
+        Amplify.DataStore.save(blog) { (result) in
             switch result {
             case .success(let savedModel):
-                print("Saved Successfully \(savedModel)")
-                self.message = savedModel.id
+                self.message = "Saved Successfully \(savedModel)"
+                print(self.message)
             case .failure(let error):
-                print("Failed to save \(error)")
+                self.message = "Failed to save \(error)"
+                print(self.message)
             }
         }
 
@@ -112,7 +119,7 @@ struct ContentView: View {
 
     func query() {
         print("Querying for \(id)")
-        Amplify.DataStore.query(Receipt.self, byId: id) { (result) in
+        Amplify.DataStore.query(Blog.self, byId: id) { (result) in
             switch result {
             case .success(let optionalModel):
                 if let model = optionalModel {
@@ -125,7 +132,38 @@ struct ContentView: View {
                 print(self.message)
             }
         }
+    }
 
+    func saveApprovedBlog() {
+        let approvedBlog = ApprovedBlog(blogId: self.id)
+        self.approvedId = approvedBlog.id
+        Amplify.DataStore.save(approvedBlog) { (result) in
+            switch result {
+            case .success(let savedModel):
+                self.message = "Saved Successfully \(savedModel)"
+                print(self.message)
+            case .failure(let error):
+                self.message = "Failed to save \(error)"
+                print(self.message)
+            }
+        }
+    }
+
+    func queryApprovedBlog() {
+        print("Querying for ApprovedBlog \(id)")
+        Amplify.DataStore.query(ApprovedBlog.self, byId: approvedId) { (result) in
+            switch result {
+            case .success(let optionalModel):
+                if let model = optionalModel {
+                    let message = "Got result back \(model)"
+                    print(message)
+                    self.message = message
+                }
+            case .failure(let error):
+                self.message = "Failed to get id: \(id) error: \(error)"
+                print(self.message)
+            }
+        }
     }
 
     var body: some View {
@@ -143,20 +181,35 @@ struct ContentView: View {
             Button(action: {
                 self.save()
             }, label: {
-                Text("Save").fontWeight(.semibold).font(.title)
+                Text("1. Save Blog").fontWeight(.semibold).font(.title)
             })
             Button(action: {
                 self.query()
             }, label: {
-                Text("Query for: ").fontWeight(.semibold).font(.title)
+                Text("2. Query for: ").fontWeight(.semibold).font(.title)
                 Text(self.id)
+            })
+            Button(action: {
+                self.saveApprovedBlog()
+            }, label: {
+                Text("3. Save Approved Blog").fontWeight(.semibold).font(.title)
+            })
+            Button(action: {
+                self.queryApprovedBlog()
+            }, label: {
+                Text("4. Query Approved Blog: ").fontWeight(.semibold).font(.title)
+                Text(self.approvedId)
             })
             Spacer()
             TextView(text: $message)
-                .frame(height: 500)
-                .padding(.horizontal)
+                .frame(height: 200)
+                .padding(.horizontal).border(Color.blue)
+            TextView(text: $vm.subscriptionData)
+                .frame(height: 200)
+                .padding(.horizontal).border(Color.black)
         }.onAppear {
             self.vm.listen()
+            self.vm.blogSubscription()
         }
     }
 }
