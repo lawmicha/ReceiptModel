@@ -4,10 +4,6 @@ Model schema from https://github.com/aws-amplify/amplify-ios/issues/403 See `sch
 
 Some doc https://github.com/aws-amplify/amplify-ios/issues/395#issuecomment-634967688
 
-## Requirements
-
-- Amplify CLI version x.x.x (TODO: update after amplify cli release)
-- Amplify Library version 1.0.2
 
 ## Steps
 
