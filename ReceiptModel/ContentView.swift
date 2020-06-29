@@ -13,8 +13,10 @@ import Combine
 class ContentViewModel: ObservableObject {
     @Published var user: AuthUser?
     @Published var subscriptionData: String = ""
+    @Published var subscriptionData2: String = ""
     var listener: UnsubscribeToken?
     var blogListener: AnyCancellable?
+    var approvedBlogListener: AnyCancellable?
     func listen() {
         _ = Amplify.Auth.fetchAuthSession { event in
             switch event {
@@ -58,8 +60,18 @@ class ContentViewModel: ObservableObject {
         }
     }
 
-    func signIn() {
+    func signIn1() {
         _ = Amplify.Auth.signIn(username: "user1", password: "password") {
+            switch $0 {
+            case .success(let signInResult):
+                print("Sign In success \(signInResult)")
+            case .failure(let error):
+                print("Sign in error \(error)")
+            }
+        }
+    }
+    func signIn2() {
+        _ = Amplify.Auth.signIn(username: "user2", password: "password") {
             switch $0 {
             case .success(let signInResult):
                 print("Sign In success \(signInResult)")
@@ -91,6 +103,26 @@ class ContentViewModel: ObservableObject {
                 self.subscriptionData = mutationEvent.json
             }
 
+        }
+    }
+
+    func approvedBlogSubscription() {
+        approvedBlogListener = Amplify.DataStore.publisher(for: ApprovedBlog.self).sink(receiveCompletion: { (completion) in
+            switch completion {
+            case .failure(let error):
+                print("Error \(error)")
+            case .finished:
+                print("Finished")
+            }
+        }) { (mutationEvent) in
+            DispatchQueue.main.async {
+                do {
+                    self.subscriptionData2 = try mutationEvent.decodeModel(as: ApprovedBlog.self).id
+                } catch {
+                    print("Failed to decode \(mutationEvent)")
+                }
+
+            }
         }
     }
 }
@@ -168,16 +200,24 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            Button(action: {
-                self.vm.signIn()
-            }, label: {
-                Text("Sign In").fontWeight(.semibold).font(.title)
-            })
-            Button(action: {
-                self.vm.signOut()
-            }, label: {
-                Text("Sign Out").fontWeight(.semibold).font(.title)
-            })
+            Group {
+                Button(action: {
+                   self.vm.signIn1()
+               }, label: {
+                   Text("Sign In 1").fontWeight(.semibold).font(.title)
+               })
+               Button(action: {
+                   self.vm.signIn2()
+               }, label: {
+                   Text("Sign In 2").fontWeight(.semibold).font(.title)
+               })
+               Button(action: {
+                   self.vm.signOut()
+               }, label: {
+                   Text("Sign Out").fontWeight(.semibold).font(.title)
+               })
+            }
+
             Button(action: {
                 self.save()
             }, label: {
@@ -202,14 +242,18 @@ struct ContentView: View {
             })
             Spacer()
             TextView(text: $message)
-                .frame(height: 200)
+                .frame(height: 120)
                 .padding(.horizontal).border(Color.blue)
             TextView(text: $vm.subscriptionData)
+                .frame(height: 200)
+                .padding(.horizontal).border(Color.black)
+            TextView(text: $vm.subscriptionData2)
                 .frame(height: 200)
                 .padding(.horizontal).border(Color.black)
         }.onAppear {
             self.vm.listen()
             self.vm.blogSubscription()
+            self.vm.approvedBlogSubscription()
         }
     }
 }

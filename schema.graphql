@@ -24,7 +24,7 @@ type Note @model @auth(rules: [{allow: owner}]) {
   comment: Comment @connection(name: "CommentNotes")
 }
 
-type ApprovedBlog @model @auth(rules: [{allow: groups, groups: ["ApprovedBlog"], operations: [read]}]) {
+type ApprovedBlog @model @auth(rules: [{allow: groups, groups: ["ApprovedBloggers"], operations: [read, create]}]) {
   id: ID!
   blogId: String
 }
