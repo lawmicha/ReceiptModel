@@ -1,24 +1,12 @@
-type Receipt @model
-    @auth(
-        rules: [ {allow: owner}]
-    )
-{
-    id: ID!
-    state: String
-    isFavorite: Boolean
-    scanError: String
-    created: AWSTimestamp
-    extracted: AWSTimestamp
-    updated: AWSTimestamp
-    viewed: AWSTimestamp
-    emailDocument: String
-    receiptImage: String
-    receiptRawText: String
-    dateTime: AWSDateTime!
-    merchant: String
-    amount: Float!
-    taxTotal: Float
-    subTotalAmount: Float
-    tipAmount: Float
-    total: String!
+type Blog @model {
+  id: ID!
+  name: String!
+  posts: [Post]! @connection(name: "BlogsPosts")
+}
+
+type Post @model {
+  id: ID!
+  title: String!
+  content: String
+  belongsTo: Blog! @connection(name: "BlogsPosts")
 }

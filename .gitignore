@@ -4,6 +4,9 @@ amplify
 Podfile.lock
 Pods
 
+.DS_Store
+.git.old
+
 #amplify
 amplify/\#current-cloud-backend
 amplify/.config/local-*
@@ -19,6 +22,3 @@ amplifyconfiguration.json
 amplify-build-config.json
 amplify-gradle-config.json
 amplifytools.xcconfig
-
-.DS_Store
-.git.old
