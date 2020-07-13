@@ -10,7 +10,7 @@ import SwiftUI
 import Amplify
 import AmplifyPlugins
 import Combine
-class ContentViewModel: ObservableObject {
+class ContentViewModel2: ObservableObject {
     @Published var user: AuthUser?
     @Published var subscriptionData: String = ""
     @Published var subscriptionData2: String = ""
@@ -90,114 +90,42 @@ class ContentViewModel: ObservableObject {
             }
         })
     }
-    func blogSubscription() {
-        blogListener = Amplify.DataStore.publisher(for: Blog.self).sink(receiveCompletion: { (completion) in
-            switch completion {
-            case .failure(let error):
-                print("Error \(error)")
-            case .finished:
-                print("Finished")
-            }
-        }) { (mutationEvent) in
-            DispatchQueue.main.async {
-                self.subscriptionData = mutationEvent.json
-            }
 
-        }
-    }
-
-    func approvedBlogSubscription() {
-        approvedBlogListener = Amplify.DataStore.publisher(for: ApprovedBlog.self).sink(receiveCompletion: { (completion) in
-            switch completion {
-            case .failure(let error):
-                print("Error \(error)")
-            case .finished:
-                print("Finished")
-            }
-        }) { (mutationEvent) in
-            DispatchQueue.main.async {
-                do {
-                    self.subscriptionData2 = try mutationEvent.decodeModel(as: ApprovedBlog.self).id
-                } catch {
-                    print("Failed to decode \(mutationEvent)")
-                }
-
-            }
-        }
-    }
 }
-struct ContentView: View {
-    @ObservedObject var vm = ContentViewModel()
-    @State var message: String = "" 
+struct ContentView2: View {
+    @ObservedObject var vm = ContentViewModel2()
+    @State var message: String = ""
 
     @State var id: String = ""
-    @State var approvedId: String = "C1DB05C8-7B98-4BD8-A0A8-AF5C83B4728C"
+    @State var approvedId: String = ""
 
-    func save() {
-        let blog = Blog()
-        self.id = blog.id
-        Amplify.DataStore.save(blog) { (result) in
+    func save1() {
+        let userProfile = UserProfile(dietryRequirments: nil, weightHistory: nil, bmiHistory: nil, favouriteFood: nil)
+        Amplify.DataStore.save(userProfile) { (result) in
             switch result {
             case .success(let savedModel):
-                self.message = "Saved Successfully \(savedModel)"
-                print(self.message)
+                print("Success!")
+                self.message = "userProfile \(savedModel)"
             case .failure(let error):
-                self.message = "Failed to save \(error)"
-                print(self.message)
-            }
-        }
-
-    }
-
-    func query() {
-        print("Querying for \(id)")
-        Amplify.DataStore.query(Blog.self, byId: id) { (result) in
-            switch result {
-            case .success(let optionalModel):
-                if let model = optionalModel {
-                    let message = "Got result back \(model)"
-                    print(message)
-                    self.message = message
-                }
-            case .failure(let error):
-                self.message = "Failed to get id: \(id) error: \(error)"
+                self.message = "Error \(error)"
                 print(self.message)
             }
         }
     }
 
-    func saveApprovedBlog() {
-        let approvedBlog = ApprovedBlog(blogId: self.id)
-        self.approvedId = approvedBlog.id
-        Amplify.DataStore.save(approvedBlog) { (result) in
+    func saveFails() {
+        let userProfile = UserProfile(dietryRequirments: nil, bmiHistory: nil, favouriteFood: nil)
+        Amplify.DataStore.save(userProfile) { (result) in
             switch result {
             case .success(let savedModel):
-                self.message = "Saved Successfully \(savedModel)"
-                print(self.message)
+                print("Success!")
+                self.message = "userProfile \(savedModel)"
             case .failure(let error):
-                self.message = "Failed to save \(error)"
+                self.message = "Error \(error)"
                 print(self.message)
             }
         }
     }
-
-    func queryApprovedBlog() {
-        print("Querying for ApprovedBlog \(id)")
-        Amplify.DataStore.query(ApprovedBlog.self, byId: approvedId) { (result) in
-            switch result {
-            case .success(let optionalModel):
-                if let model = optionalModel {
-                    let message = "Got result back \(model)"
-                    print(message)
-                    self.message = message
-                }
-            case .failure(let error):
-                self.message = "Failed to get id: \(id) error: \(error)"
-                print(self.message)
-            }
-        }
-    }
-
     var body: some View {
         VStack {
             Group {
@@ -219,27 +147,23 @@ struct ContentView: View {
             }
 
             Button(action: {
-                self.save()
+                self.save1()
             }, label: {
-                Text("1. Save Blog").fontWeight(.semibold).font(.title)
+                Text("1. Save UserProfile with nil").fontWeight(.semibold).font(.title)
             })
+
             Button(action: {
-                self.query()
+                self.saveFails()
             }, label: {
-                Text("2. Query for: ").fontWeight(.semibold).font(.title)
-                Text(self.id)
+                Text("1. Save UserProfile with []").fontWeight(.semibold).font(.title)
             })
-            Button(action: {
-                self.saveApprovedBlog()
-            }, label: {
-                Text("3. Save Approved Blog").fontWeight(.semibold).font(.title)
-            })
-            Button(action: {
-                self.queryApprovedBlog()
-            }, label: {
-                Text("4. Query Approved Blog: ").fontWeight(.semibold).font(.title)
-                Text(self.approvedId)
-            })
+//
+//            Button(action: {
+//                self.save3()
+//            }, label: {
+//                Text("1. Save User with message").fontWeight(.semibold).font(.title)
+//            })
+
             Spacer()
             TextView(text: $message)
                 .frame(height: 120)
@@ -252,18 +176,11 @@ struct ContentView: View {
                 .padding(.horizontal).border(Color.black)
         }.onAppear {
             self.vm.listen()
-            self.vm.blogSubscription()
-            self.vm.approvedBlogSubscription()
+            //self.vm.blogSubscription()
+            //self.vm.approvedBlogSubscription()
         }
     }
 }
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
-}
-
 
 /// https://github.com/appcoda/MultiLineTextView
 struct TextView: UIViewRepresentable {
